@@ -1,0 +1,120 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>Edit features with the Editor widget | Sample | ArcGIS API for JavaScript 4.22</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.22/"></script>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+        
+        .esri-editor .esri-item-list__scroller {
+            max-height: 900px;
+            min-height: 700px;
+        }
+    </style>
+
+    <script>
+        require([
+            "esri/WebMap",
+            "esri/views/MapView",
+            "esri/widgets/Editor",
+            "esri/widgets/support/SnappingControls",
+            "esri/widgets/Expand"
+        ], (
+            WebMap, MapView,
+            Editor, SnappingControls,
+            Expand
+        ) => {
+
+            let pointLayer;
+
+            // Create a map from the referenced webmap item id
+            const webmap = new WebMap({
+                portalItem: {
+                    id: "a107fdfa00d44710a579fd263809df9a"
+                }
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                map: webmap
+            });
+
+            view.when(() => {
+                view.map.loadAll().then(() => {
+                    view.map.allLayers.forEach((layer) => {
+                        if (layer.type === 'feature') {
+                            switch (layer.geometryType) {
+                                case "polygon":
+                                    polygonLayer = layer;
+                                    break;
+                                case "polyline":
+                                    lineLayer = layer;
+                                    break;
+                                case "point":
+                                    pointLayer = layer;
+                                    break;
+                            }
+                        }
+                    });
+
+                    // Create layerInfos for layers in Editor. This
+                    // sets the fields for editing.
+
+                    const pointInfos = {
+                        layer: pointLayer,
+                        formTemplate: { // autocasts to FormTemplate
+                            elements: [{ // autocasts to Field Elements
+                                type: "field",
+                                fieldName: "KODAS",
+                                label: "Hazard type"
+                            }, {
+                                type: "field",
+                                fieldName: "pastabos",
+                                label: "Description"
+                            }, {
+                                type: "field",
+                                fieldName: "pateikimo_data",
+                                label: "Status"
+                            }]
+                        }
+                    };
+                    const editor = new Editor({
+                        view: view,
+                        layerInfos: [pointInfos], //, lineInfos, polyInfos],
+                        // It is possible to set snapping via the API by directly setting SnappingOptions in the Editor. This can also be toggled on/off using the CTRL key. By default snapping is not enabled, setting enabled to true toggles this.
+                        snappingOptions: { // Autocastable to snapping options
+                            enabled: true, // sets the global snapping option that controls both geometry constraints (self-snapping) and feature snapping.
+                            featureSources: [{ // Autocastable to FeatureSnappingLayerSource
+                                // Enable feature snapping on specified layer(s)
+                                layer: pointLayer
+                            }]
+                        }
+                    });
+
+                    // Add the widgets to top and bottom right of the view
+                    view.ui.add(editor, "top-right");
+                    view.ui.add(snappingExpand, "bottom-right");
+                });
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div id="viewDiv"></div>
+    <div id="editorDiv"></div>
+</body>
+
+</html>
